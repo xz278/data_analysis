@@ -11,6 +11,9 @@ from collections import Counter
 import numpy as np
 import math
 import gc
+import os
+import sys
+import psutil
 
 def compute_woe(df, res_col, bin_col='bin', smooth=1, auto_gc=True):
     """
@@ -381,7 +384,52 @@ def keyword_appearance(df, fields, words):
     return ret
 
 
+def sizeof(v, disp=False):
+    """
+    Get the size of a variable in MB.
 
+    Parameters:
+    -----------
+    v: a variable or a pointer
+        A variable
+
+    disp: bool
+        Whether print current memory to screen.
+        Defaults to False.
+
+    Returns:
+    --------
+    s: float
+        The size of the variable in MB.
+    """
+    s = sys.getsizeof(v) / 1024 / 1024
+    if disp:
+        print('current memory: {:.3f} MB'. format(s))
+    return s
+
+
+def memory_now(disp=False):
+    """
+    Get the memroy cosumed by current python
+    process.
+
+    Parameters:
+    -----------
+    disp: bool
+        Whether print current memory to screen.
+        Defaults to False.
+
+    Returns:
+    --------
+    m: float
+        The size of memory taken up by current
+        process in MB.
+    """
+    info = psutil.virtual_memory()
+    m = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
+    if disp:
+        print('current memory: {:.3f} MB'. format(m))
+    return m
 
 
 def main():
