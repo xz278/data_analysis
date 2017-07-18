@@ -9,8 +9,10 @@ import numpy as np
 import pandas as pd
 from collections import Counter
 import numpy as np
+import math
+import gc
 
-def compute_woe(df, res_col, bin_col='bin', smooth=1):
+def compute_woe(df, res_col, bin_col='bin', smooth=1, auto_gc=True):
     """
     Compute WOE(weight of eveidence).
 
@@ -30,6 +32,11 @@ def compute_woe(df, res_col, bin_col='bin', smooth=1):
     smooth: float
         Smooth value to avoid inf WOE value.
         Default value is 1.
+
+    auto_gc: boolean
+        Whether collect garbage memory automatically.
+        Defaults to True.
+        Might be useful to Ubuntu.
 
     Returns:
     --------
@@ -71,6 +78,9 @@ def compute_woe(df, res_col, bin_col='bin', smooth=1):
 
         # add to total IV
         total_iv += curr_iv
+
+    if auto_gc:
+        gc.collect()
 
     return total_iv, woe_iv_dict
 
