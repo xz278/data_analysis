@@ -302,6 +302,77 @@ def load_paras(f):
 
 
 
+def keyword_appearance(df, fields, words):
+    """
+    Compute keyword appearance in the text fields.
+
+    Parameters:
+    -----------
+    df: DataFrame
+        Text data.
+
+    fields: list of str
+        Fields to look at.
+
+    words: list of str
+        Key words to look at.
+
+    Returns:
+    --------
+    ret: DataFrame
+        Statistics.
+    """
+    ret = {}
+
+    # for each key word
+    p = -1
+    for w in words:
+        p += 1
+        entry = {}
+        entry['sort'] = p
+        # bad loan rate for its presence / absence
+        df_presence = df.loc[df[w] == 1]
+        if len(df_presence) == 0:
+            entry['出现|坏账率'] = np.nan
+        else:
+            df_bad = df_presence.loc[df_presence['label'] == 1]
+            r = len(df_bad) / len(df_presence)
+            entry['出现|坏账率'] = r
+
+        df_absence = df.loc[df[w] == 0]
+        if len(df_absence) == 0:
+            entry['出现|坏账率'] = np.nan
+        else:
+            df_bad = df_absence.loc[df_absence['label'] == 1]
+            r = len(df_bad) / len(df_absence)
+            entry['未出现|坏账率'] = r
+
+        # appearance of the word in different fields
+        sum_cnt = 0
+        for f in fields:
+            try:
+                df_f = df_presence.loc[[False if pd.isnull(x)
+                                        else w in x
+                                        for x in df_presence[f]]]
+            except:
+                print(df_presence[f])
+                print(w, f)
+                return None
+            field_cnt = len(df_f)
+            entry[f] = field_cnt
+            sum_cnt += field_cnt
+
+        ret[w] = entry
+
+    ret = pd.DataFrame.from_dict(ret, orient='index')
+    ret = ret.sort_values('sort')
+    ret = ret.drop('sort', axis=1)
+
+    return ret
+
+
+
+
 
 def main():
     """
