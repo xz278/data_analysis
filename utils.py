@@ -16,6 +16,8 @@ import sys
 import psutil
 # import joblib
 import json
+from urllib.request import urlopen, quote
+import requests
 
 def compute_woe(df, res_col, bin_col='bin', smooth=1, auto_gc=True):
     """
@@ -432,6 +434,91 @@ def memory_now(disp=False):
     if disp:
         print('current memory: {:.3f} MB'. format(m))
     return m
+
+
+def get_latlon(text_address, ak=None):
+    """
+    Get latitude and longitude of the address through
+    Baidu Map API geocoder.
+
+    Parameters:
+    -----------
+    text_address: str
+        Address in text format.
+
+    ak: str
+        Baidu Map API key.
+
+    Returns:
+    --------
+    ret: dict
+        Latitude, longitude, and other information
+        returned by the api.
+        Returned information includes,
+        'status': 0 for success, otherwise failure,
+        in the case of succes:
+        'lat': latitdue,
+        'lon': longitude,
+        'precise': whether location is precise,
+                   0 for precise, 1 otherwise,
+        'confidence': level of confidence,
+        'level': type of address
+        In the case of bad request:
+        'message': error message returned by server,
+        'status': type of error.
+    """
+    # Use default key if ak is not provided
+    if ak is None:
+        ak = 'F4P8cT0VGfgvdDIVW9EvbnpscYvwbwTz'
+
+    # type of errors
+    error_type = {1: '内部服务器错误',
+                  2: '请求参数非法',
+                  3: '权限校验失败',
+                  4: '配额校验失败',
+                  5: 'ak不存在或者非法',
+                  101: '服务禁用',
+                  102: '不通过白名单或者安全码不对',
+                  'other': {'2': '无权限',
+                            '3': '配额错误'}}
+
+    # service url
+    url = 'http://api.map.baidu.com/geocoder/v2/'
+    # output format
+    output = 'json'
+    # use quote to decode address to avoid unrecognized characters
+    add = quote(text_address)
+    uri = url + '?' + 'address=' + add  + '&output=' + output + '&ak=' + ak
+    req = urlopen(uri)
+    res = req.read().decode()
+    temp = json.loads(res)
+    status = temp['status']
+    # return lat, lon if request is successful,
+    # otherwise return nan and print error message
+    ret = {}
+    if status == 0:
+        res = temp['result']
+        ret['lat'] = res['location']['lat']
+        ret['lon'] = res['location']['lng']
+        ret['confidence'] = res['confidence']
+        ret['level'] = res['level']
+        ret['precise'] = res['precise']
+        ret['status'] = 0
+    else:
+        ret['status'] = status
+        ret['message'] = temp['message']
+        e_type = ''
+        try:
+            if status in error_type:
+                e_type = error_type[status]
+            else:
+                s = str(status)[0]
+                e_type = error_type['other'][s]
+        except:
+            e_type = ''
+        ret['type'] = e_type
+        print('Request failed: {}; {}'.format(ret['message'], ret['type']))
+    return ret
 
 
 def main():
