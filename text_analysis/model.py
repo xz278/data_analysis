@@ -30,7 +30,11 @@ import xgboost as xgb
 import yaml
 import argparse
 
-def run_model(m, params_f='./params.txt', n_run=10, ):
+def run_model(m, params_f='./params.txt', n_run=10,
+              test_size=0.2,
+              train_size1=0.8,
+              train_size2=0.8,
+              val_size=0.8):
     """
     Run models on the data.
 
@@ -46,7 +50,28 @@ def run_model(m, params_f='./params.txt', n_run=10, ):
 
     params_f: str
         File that stores parameters in yaml.
-        Defaults to 
+        Defaults to './params.txt'.
+
+    test_size: float
+        Test data size, the proportion in the
+        entire data set.
+        Defaults to 0.2.
+
+    train_size1: float
+        Train data size, the proportion in the
+        entire data set, including actual training
+        and validation set.
+        Defaults to 0.8.
+
+    train_size2: float
+        Actual test data size, the proportion in
+        train size1.
+        Defaults to 0.8.
+
+    val_size: float
+        Validation data size, the proportion of data
+        from the training data set (train_size1).
+        Defaults to 0.2.
     """
 
     # models availabe
@@ -75,7 +100,7 @@ def run_model(m, params_f='./params.txt', n_run=10, ):
     key_word = key_word.dropna(axis=1).iloc[0, :].values
 
     # split train and test data
-    train_data, test_data = train_test_split(data, test_size=0.2, train_size=0.8, random_state=7)
+    train_data, test_data = train_test_split(data, test_size=test_size, train_size=train_size1, random_state=7)
 
     print('Done.')
     print()
@@ -116,7 +141,7 @@ def run_model(m, params_f='./params.txt', n_run=10, ):
             seed_used.append(seed)
 
             # split training and validation data
-            dtrain, dval = train_test_split(data, test_size=0.2, train_size=0.8, random_state=seed)
+            dtrain, dval = train_test_split(data, test_size=val_size, train_size=train_size2, random_state=seed)
 
             # train model
             start_time = time.time()
@@ -172,7 +197,7 @@ def run_model(m, params_f='./params.txt', n_run=10, ):
         seed = random.randint(1, 1000)
         seed_used = [seed]
 
-        dtrain, dval = train_test_split(train_data, test_size=0.2, train_size=0.8, random_state=seed)
+        dtrain, dval = train_test_split(train_data, test_size=val_size, train_size=train_size2, random_state=seed)
         # check for labels
         # if only one class is present in the data set, resample the data
         # implement this section later
@@ -270,10 +295,25 @@ def main():
     parser.add_argument('-p', '--parameters', default='./params.txt',
                         help='File that stores parameters for the classifer')
 
+    parser.add_argument('-ts1', '--train_size1', default=0.8, type=float,
+                    help='train_size1')
+
+    parser.add_argument('-ts2', '--train_size2', default=0.8, type=float,
+                    help='train_size2')
+
+    parser.add_argument('-ts', '--test_size', default=0.2, type=float,
+                    help='test_size')
+
+    parser.add_argument('-vs', '--val_size', default=0.2, type=float,
+                    help='val_size')
+
+
     args = parser.parse_args()
 
     # run the model
-    run_model(args.classifier, params_f=args.parameters, n_run=args.num_run)
+    run_model(args.classifier, params_f=args.parameters, n_run=args.num_run,
+              test_size=args.test_size, val_size=args.val_size,
+              train_size1=args.train_size1, train_size2=args.train_size2)
 
 
 if __name__ == '__main__':
