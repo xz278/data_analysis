@@ -54,7 +54,7 @@ def run_model(m, params_f='./params.txt', n_run=10, ):
     models = {'svm': SVC,
               'gbc': GradientBoostingClassifier,
               'lg': LogisticRegression,
-              'adboost': AdaBoostClassifier,
+              'adaboost': AdaBoostClassifier,
               'bnb': BernoulliNB, 
               'rf': RandomForestClassifier,
               'xgboost': xgb}
@@ -170,12 +170,16 @@ def run_model(m, params_f='./params.txt', n_run=10, ):
         kss = []
 
         seed = random.randint(1, 1000)
+        seed_used = [seed]
 
         dtrain, dval = train_test_split(train_data, test_size=0.2, train_size=0.8, random_state=seed)
+        # check for labels
+        # if only one class is present in the data set, resample the data
+        # implement this section later
+        xgb_test_label = test_data['label']
         xgb_train = xgb.DMatrix(dtrain[key_word], label=dtrain.label)
         xgb_val = xgb.DMatrix(dval[key_word], label=dval.label)
         xgb_test = xgb.DMatrix(test_data[key_word])
-        xgb_test_label = test_data[['label']]
         watchlist = [(xgb_train, 'train'), (xgb_val, 'val')]
 
         # parameters
@@ -209,27 +213,23 @@ def run_model(m, params_f='./params.txt', n_run=10, ):
         curr_auc = []
         curr_ks = []
         p_test = model.predict(xgb.DMatrix(dtrain[key_word]))
-        auc = roc_auc_score(y_true=create_y_true(dtrain.label),
-                            y_score=p_test)
-        ks = utils.ks(y_true=create_y_true(dtrain.label),
-                      y_proba=p_test)
+        auc = roc_auc_score(y_true=create_y_true(dtrain.label), y_score=p_test)
+        ksv = ks(y_true=create_y_true(dtrain.label), y_proba=p_test)
 
         curr_auc.append(auc)
-        curr_ks.append(ks)
+        curr_ks.append(ksv)
 
         p_test = model.predict(xgb.DMatrix(dval[key_word]))
-        auc = roc_auc_score(y_true=create_y_true(dval.label),
-                            y_score=p_test)
-        ks = utils.ks(y_true=create_y_true(dval.label),
-                      y_proba=p_test)
+        auc = roc_auc_score(y_true=create_y_true(dval.label), y_score=p_test)
+        ksv = ks(y_true=create_y_true(dval.label), y_proba=p_test)
         curr_auc.append(auc)
-        curr_ks.append(ks)
+        curr_ks.append(ksv)
 
         y_pred = model.predict(xgb_test)
         auc = roc_auc_score(y_true=create_y_true(xgb_test_label), y_score=y_pred)
-        ks = utils.ks(y_true=create_y_true(xgb_test_label), y_proba=y_pred)
+        ksv = ks(y_true=create_y_true(xgb_test_label), y_proba=y_pred)
         curr_auc.append(auc)
-        curr_ks.append(ks)
+        curr_ks.append(ksv)
 
         aucs.append(curr_auc)
         kss.append(curr_ks)
