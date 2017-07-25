@@ -189,7 +189,7 @@ def run_model(m, params_f='./params.txt', n_run=10,
 
             time_spent = end_time - start_time
             minutes, seconds = divmod(time_spent, 60)
-            print('[{}]    training-auc: {:.7}    val-auc: {:.7}    test-auc: {:.7}    time: {}min {}seconds'.format(i,
+            print('[{}]    training-auc: {:.7}    val-auc: {:.7}    test-auc: {:.7}    time: {:3}min {:.4}sec'.format(i,
                                                                                                                curr_auc[0],
                                                                                                                curr_auc[1],
                                                                                                                curr_auc[2],
@@ -243,7 +243,7 @@ def run_model(m, params_f='./params.txt', n_run=10,
         end_time = time.time()
         print()
         minutes, seconds = divmod(end_time - start_time, 60)
-        print('Time spent: {}min {}sec'.format(minutes, seconds))
+        print('Time spent: {:3}min {:.4}sec'.format(minutes, seconds))
         print()
 
         curr_auc = []
