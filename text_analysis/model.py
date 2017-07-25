@@ -265,17 +265,26 @@ def run_model(m, params_f='./params.txt', n_run=10,
     df_ks = pd.DataFrame(kss, columns=['train', 'val', 'test'])
 
     # save results
+    # create result dir if not present
     p = os.path.join('./data', 'results')
     if not os.path.exists(p):
         os.mkdir(p)
 
-    p = os.path.join(p, m)
-    if not os.path.exists(p):
-        os.mkdir(p)
+    # create model dir if not present
+    p2 = os.path.join(p, m)
+    if not os.path.exists(p2):
+        os.mkdir(p2)
+    else:
+        c = 1
+        p2 = os.path.join(p, '{}{}'.format(m, c))
+        while os.path.exists(p2):
+            c += 1
+            p2 = os.path.join(p, '{}{}'.format(m, c))
+        os.mkdir(p2)
 
-    df_auc.to_csv(os.path.join(p, 'auc.csv'))
-    df_ks.to_csv(os.path.join(p, 'ks.csv'))
-    with open(os.path.join(p, 'params.txt'), 'w') as f:
+    df_auc.to_csv(os.path.join(p2, 'auc.csv'))
+    df_ks.to_csv(os.path.join(p2, 'ks.csv'))
+    with open(os.path.join(p2, 'params.txt'), 'w') as f:
         yaml.dump(params, f)
 
 
@@ -307,7 +316,6 @@ def main():
     parser.add_argument('-vs', '--val_size', default=0.2, type=float,
                     help='val_size')
 
-
     args = parser.parse_args()
 
     # run the model
@@ -318,3 +326,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
