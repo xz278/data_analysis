@@ -108,7 +108,8 @@ def run_model(m, params_f='./params.txt', n_run=10,
 
 
     if m != 'xgboost':
-
+        model_to_save = None
+        best_auc = -1
         # choose classifier
         clf = models[m]
 
@@ -126,7 +127,6 @@ def run_model(m, params_f='./params.txt', n_run=10,
         # run model and save result
         aucs = []
         kss = []
-        # models = []
 
         seed_used = []
 
@@ -179,7 +179,13 @@ def run_model(m, params_f='./params.txt', n_run=10,
             aucs.append(curr_auc)
             kss.append(curr_ks)
 
-            # models.append(clf)
+            # save the model with the highest testing auc
+            if model_to_save is None:
+                model_to_save = clf
+                best_auc = aucs[-1][-1]
+            elif aucs[-1][-1] > best_auc:
+                model_to_save = clf
+                best_auc = aucs[-1][-1]
 
             print('[{}]    training-auc: {:.7}    val-auc: {:.7}    test-auc: {:.7}    time: {:.3} min'.format(i,
                                                                                                                curr_auc[0],
@@ -187,6 +193,7 @@ def run_model(m, params_f='./params.txt', n_run=10,
                                                                                                                curr_auc[2],
                                                                                                                (end_time - start_time) / 60))
 
+            # collect potential unreferenced variable to save memory
             gc.collect()
 
     # if xgboost is used
@@ -259,6 +266,8 @@ def run_model(m, params_f='./params.txt', n_run=10,
         aucs.append(curr_auc)
         kss.append(curr_ks)
 
+        model_to_save = model
+
 
 
     df_auc = pd.DataFrame(aucs, columns=['train', 'val', 'test'])
@@ -282,11 +291,14 @@ def run_model(m, params_f='./params.txt', n_run=10,
             p2 = os.path.join(p, '{}{}'.format(m, c))
         os.mkdir(p2)
 
+    # save results
     df_auc.to_csv(os.path.join(p2, 'auc.csv'))
     df_ks.to_csv(os.path.join(p2, 'ks.csv'))
     with open(os.path.join(p2, 'params.txt'), 'w') as f:
         yaml.dump(params, f)
 
+    # save model
+    joblib.dump(model_to_save, 'model.dat')
 
 def main():
     """
@@ -326,4 +338,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
