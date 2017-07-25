@@ -187,11 +187,14 @@ def run_model(m, params_f='./params.txt', n_run=10,
                 model_to_save = clf
                 best_auc = aucs[-1][-1]
 
-            print('[{}]    training-auc: {:.7}    val-auc: {:.7}    test-auc: {:.7}    time: {:.3} min'.format(i,
+            time_spent = end_time - start_time
+            minutes, seconds = divmod(time_spent, 60)
+            print('[{}]    training-auc: {:.7}    val-auc: {:.7}    test-auc: {:.7}    time: {}min {}seconds'.format(i,
                                                                                                                curr_auc[0],
                                                                                                                curr_auc[1],
                                                                                                                curr_auc[2],
-                                                                                                               (end_time - start_time) / 60))
+                                                                                                               minutes,
+                                                                                                               seconds))
 
             # collect potential unreferenced variable to save memory
             gc.collect()
