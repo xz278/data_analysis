@@ -78,7 +78,7 @@ def run_model(m, params_f='./params.txt', n_run=10,
     print('Checking classifer ...')
     models = {'svm': SVC,
               'gbc': GradientBoostingClassifier,
-              'lg': LogisticRegression,
+              'lr': LogisticRegression,
               'adaboost': AdaBoostClassifier,
               'bnb': BernoulliNB, 
               'rf': RandomForestClassifier,
