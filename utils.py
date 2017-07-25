@@ -510,6 +510,50 @@ def get_latlon(text_address, ak=None):
     return ret
 
 
+def batch_latlon(ls_addr, stop_length=61, stop_thr=10000, ak=None):
+    """
+    Retrieve latitude and longitude of a list of address.
+    Will stop for 61 seconds (unless otherwise specified)
+    after every 10000 request.
+
+    Parameters:
+    -----------
+    ls_addr: list of str
+        List of text address.
+
+    stop_length: int
+        Seconds to wait before starting new request.
+        Defaults to 61 seconds.
+
+    stop_thr: int
+        Number of requests in a time interval.
+
+    ak: str
+        Baidu api key.
+        Defaults to None.
+
+    Returns:
+    --------
+    ls_latlon: list of tuples
+        List of gps coordinates.
+    """
+    c = 0
+    ls_latlon = []
+    for a in ls_addr:
+        c += 1
+        if c == stop_thr:
+            c = 0
+            time.sleep(stop_length)
+        if ak is None:
+            r = get_latlon(text_address=a)
+        else:
+            r = get_latlon(text_address=a, ak=ak)
+        if r['succeed']:
+            ls_latlon.append((r['lat'], r['lon']))
+        else:
+            ls_latlon.append((np.nan, np.nan))
+    return ls_latlon
+
 
 def main():
     """
