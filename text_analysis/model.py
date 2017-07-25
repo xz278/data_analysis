@@ -297,8 +297,21 @@ def run_model(m, params_f='./params.txt', n_run=10,
     with open(os.path.join(p2, 'params.txt'), 'w') as f:
         yaml.dump(params, f)
 
+    # save average performance
+    tmp1 = []
+    tmp2 = []
+    cols = ['train', 'val', 'test']
+    for c in cols:
+        tmp1.append(df_auc[c].mean())
+        tmp2.append(df_ks[c].mean())
+    df_p = pd.DataFrame([tmp1, tmp2], columns=cols)
+    df_p['metrics'] = ['auc', 'ks']
+    df_p = df_p.set_index('metrics')
+    df_p.to_csv(os.path.join(p2, 'performance.csv'))
+
     # save model
-    joblib.dump(model_to_save, 'model.dat')
+    joblib.dump(model_to_save, os.path.join(p2, 'model.dat'))
+
 
 def main():
     """
