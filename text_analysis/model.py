@@ -242,7 +242,8 @@ def run_model(m, params_f='./params.txt', n_run=10,
         model = xgb.train(parameter_list, xgb_train, num_rounds, watchlist, early_stopping_rounds=early_stop)
         end_time = time.time()
         print()
-        print('Time spent: {:.3}'.format((end_time - start_time) / 60))
+        minutes, seconds = divmod(end_time - start_time, 60)
+        print('Time spent: {}min {}sec'.format(minutes, seconds))
         print()
 
         curr_auc = []
