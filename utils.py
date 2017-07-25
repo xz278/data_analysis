@@ -503,22 +503,12 @@ def get_latlon(text_address, ak=None):
         ret['confidence'] = res['confidence']
         ret['level'] = res['level']
         ret['precise'] = res['precise']
-        ret['status'] = 0
+        ret['succeed'] = True
     else:
-        ret['status'] = status
-        ret['message'] = temp['message']
-        e_type = ''
-        try:
-            if status in error_type:
-                e_type = error_type[status]
-            else:
-                s = str(status)[0]
-                e_type = error_type['other'][s]
-        except:
-            e_type = ''
-        ret['type'] = e_type
-        print('Request failed: {}; {}'.format(ret['message'], ret['type']))
+        ret = temp
+        ret['succeed'] = False
     return ret
+
 
 
 def main():
