@@ -97,7 +97,7 @@ def get_coordinates(addr_col,
         sys.stdout.flush()
         if cnt >= amt:
             break
-        time.sleep(0.5)
+        time.sleep(0.1)
 
     t2 = time.time()
     m, s = divmod(t2 - t1, 60)
