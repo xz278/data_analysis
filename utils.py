@@ -469,15 +469,15 @@ def get_latlon(text_address, ak=None):
         ak = 'F4P8cT0VGfgvdDIVW9EvbnpscYvwbwTz'
 
     # type of errors
-    error_type = {1: '内部服务器错误',
-                  2: '请求参数非法',
-                  3: '权限校验失败',
-                  4: '配额校验失败',
-                  5: 'ak不存在或者非法',
-                  101: '服务禁用',
-                  102: '不通过白名单或者安全码不对',
-                  'other': {'2': '无权限',
-                            '3': '配额错误'}}
+    # error_type = {1: '内部服务器错误',
+    #               2: '请求参数非法',
+    #               3: '权限校验失败',
+    #               4: '配额校验失败',
+    #               5: 'ak不存在或者非法',
+    #               101: '服务禁用',
+    #               102: '不通过白名单或者安全码不对',
+    #               'other': {'2': '无权限',
+    #                         '3': '配额错误'}}
 
     # service url
     url = 'http://api.map.baidu.com/geocoder/v2/'
@@ -497,12 +497,12 @@ def get_latlon(text_address, ak=None):
         res = temp['result']
         ret['lat'] = res['location']['lat']
         ret['lon'] = res['location']['lng']
-        ret['confidence'] = res['confidence']
-        ret['level'] = res['level']
-        ret['precise'] = res['precise']
+        # ret['confidence'] = res['confidence']
+        # ret['level'] = res['level']
+        # ret['precise'] = res['precise']
         ret['succeed'] = True
     else:
-        ret = temp
+        # ret = temp
         ret['succeed'] = False
     return ret
 
