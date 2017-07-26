@@ -12,11 +12,12 @@ import sys
 import yaml
 import utils
 import argparse
+from os.path import join, exists
 
 
 def get_coordinates(addr_col,
-                    df_path='./data/locations_with_loan_no_and_label.csv',
-                    f_output='./data/tmp.yaml',
+                    df_path='./data/data_eng.csv',
+                    result_path='./data/',
                     amt=10000,
                     start_time=None):
     """
@@ -27,14 +28,14 @@ def get_coordinates(addr_col,
     -----------
     df_path: str
         Address data file path.
-        Defaults to './data/locations_with_loan_no_and_label.csv'
+        Defaults to './data/data_eng.csv'
 
     addr_col: str
         Address column.
 
-    f_output: str
-        File to store data.
-        Defualts to './data/tmp.yaml'.
+    result_path: str
+        File to store lat,lon results.
+        Defualts to './data/'.
 
     amt: int
         Number of data to process.
@@ -46,22 +47,32 @@ def get_coordinates(addr_col,
         immediately.
     """
     # load data
-    data = pd.read_csv(df_path, encoding='gb18030', index_col='贷款编号')
+    time_started = pd.datetime.now()
+    data = pd.read_csv(df_path, encoding='gb18030', index_col='loan_no')
     loan_no = [str(x) for x in data.index.values]
     data.index = loan_no
 
     # load current data
-    with open(f_output, 'r') as f:
-        tmp = yaml.load(f)
+    f_output = join(result_path, '{}.yaml'.format(addr_col))
+    if exists(f_output):
+        with open(f_output, 'r') as f:
+            tmp = yaml.load(f)
+    else:
+        tmp = {}
 
     # start the process at the specified time
     if start_time is not None:
         start_time = pd.to_datetime(start_time)
         current_time = pd.datetime.now()
-        if start_time > current_time:
-            time_diff = (start_time - current_time).total_seconds()
-            if time_diff > 0:
-                time.sleep(time_diff)
+        time_diff = (start_time - current_time).total_seconds()
+        if time_diff > 10:
+            scheduled_time = 'Scheduled start time: {}'.format(start_time)
+            print('Will start at {}\n'.format(start_time))
+            time.sleep(time_diff)
+        else:
+            scheduled_time = 'Scheduled start time: {}'.format('N/A')
+    else:
+        scheduled_time = 'Scheduled start time: {}'.format('N/A')
 
     cnt = 0
     t1 = time.time()
@@ -75,9 +86,18 @@ def get_coordinates(addr_col,
         else:
             g = (np.nan, np.nan)
         tmp[l] = g
+
+        # save results after every 100 request
+        c_a, c_b = divmod(cnt, 100)
+        if c_b == 0:
+            with open(f_output, 'w') as f:
+                yaml.dump(tmp, f)
+
+        sys.stdout.write('    {} processed ...\r'.format(cnt))
+        sys.stdout.flush()
         if cnt >= amt:
             break
-        time.sleep(1)
+        time.sleep(0.5)
 
     t2 = time.time()
     m, s = divmod(t2 - t1, 60)
@@ -85,13 +105,28 @@ def get_coordinates(addr_col,
     with open(f_output, 'w') as f:
         yaml.dump(tmp, f)
 
+    addr_type = 'Address type: {}'.format(addr_col)
+    time_started = 'Started at: {}'.format(time_started)
     time_spent = 'Time spent: {:8.4}min {:6.4}sec'.format(m, s)
     processed = 'Processed {} addresses'.format(cnt)
-    log_info = [time_spent, processed]
-    with open('./data/log.yaml', 'w') as f:
-        yaml.dump(log_info, f)
+    time_finished = pd.datetime.now()
+    time_finished = 'Stopped at: {}'.format(time_finished)
+    log_info = [addr_type, time_started, time_spent, processed, time_finished]
+    with open('./data/log.txt', 'a') as f:
+        f.write(addr_type + '\n')
+        f.write(time_started + '\n')
+        f.write(scheduled_time + '\n')
+        f.write(time_spent + '\n')
+        f.write(processed + '\n')
+        f.write(time_finished + '\n')
+        f.write('\n\n\n')
+    print(addr_type)
+    print(time_started)
+    print(scheduled_time)
     print(time_spent)
     print(processed)
+    print(time_finished)
+    print()
 
 
 def main():
