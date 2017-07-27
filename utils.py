@@ -486,7 +486,19 @@ def get_latlon(text_address, ak=None):
     # use quote to decode address to avoid unrecognized characters
     add = quote(text_address)
     uri = url + '?' + 'address=' + add  + '&output=' + output + '&ak=' + ak
-    req = urlopen(uri)
+
+    # maximum number of requests for url request timeout
+    max_try = 10
+    for i in range(max_try):
+        try:
+            req = urlopen(uri)
+            break
+        except:
+            if i < max_try - 1:
+                continue
+            else:
+                return {'succeed': False}
+
     res = req.read().decode()
     temp = json.loads(res)
     status = temp['status']
