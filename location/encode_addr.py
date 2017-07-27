@@ -152,7 +152,9 @@ def encode_addr(amt_limit=10000,
 
         cnt += 1
         pct = round(cnt / amt_limit * 100)
-        sys.stdout.write('    {} processed ...    {}%\r'.format(cnt, pct))
+        rem_cnt = amt_limit - cnt
+        msg = ' {}%, processed: {}, remaining: {} \r'
+        sys.stdout.write(msg.format(pct, cnt, rem_cnt))
         sys.stdout.flush()
 
         # teminate program if the target is met
