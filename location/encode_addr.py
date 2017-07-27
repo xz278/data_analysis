@@ -172,7 +172,7 @@ def encode_addr(amt_limit=10000,
     # write log
     time_started = 'Started at: {}'.format(time_started)
     time_spent = 'Time spent: {:8.4}min {:6.4}sec'.format(m, s)
-    processed_cnt = 'Processed {} loan no'.format(cnt)
+    processed_cnt = 'Processed {} row(s)'.format(cnt)
     time_finished = 'Stopped at: {}'.format(time_finished)
     log_info = [time_started, time_spent, processed_cnt, time_finished]
 
@@ -199,11 +199,14 @@ def main():
     parser = argparse.ArgumentParser()
 
     # commond
+    # parser.add_argument('-', '--help', default=False,
+    #                 help='Display help information')
+
     parser.add_argument('-t', '--start_time', default=None,
                         help='Start time')
 
     parser.add_argument('-a', '--amt', default=10000, type=int,
-                        help='Number of loan no to process')
+                        help='Number of row to process')
 
     parser.add_argument('-r', '--retry', default=7, type=int,
                         help='Number of times to retry after timeout')
