@@ -29,7 +29,7 @@ import socket
 def encode_addr(amt_limit=10000,
                 max_retry=7,
                 start_time=None,
-                buffer_size=100):
+                buffer_size=10):
     """
     Encode text address to (lat, lon) coordinates.
     """
@@ -208,7 +208,7 @@ def main():
     parser.add_argument('-r', '--retry', default=7, type=int,
                         help='Number of times to retry after timeout')
 
-    parser.add_argument('-b', '--buffer_size', default=100, type=int,
+    parser.add_argument('-b', '--buffer_size', default=10, type=int,
                         help='Output buffer size')
 
     args = parser.parse_args()
