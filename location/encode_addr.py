@@ -60,6 +60,7 @@ def encode_addr(amt_limit=10000,
                             dtype={'loan_no': str})
     text_addr = text_addr.set_index('loan_no')
     addr_fields = text_addr.columns.values[:4]
+    total_num_addr = text_addr.shape[0]
 
     # get processed data
     processed = pd.read_csv('./data/tmp/tmp_lat_lon_data.csv',
@@ -87,8 +88,21 @@ def encode_addr(amt_limit=10000,
     else:
         scheduled_time = 'Scheduled start time: {}'.format('N/A')
 
+    # message print to screen
+    msg = '  [!] {}%, {} extracted, {} remaining       '
+    msg += '{}: {}: {} spent, '
+    msg += '{}: {}: {} remaining\r'
+    mask_len = 80
+    msg_mask = ''
+    for _ in range(mask_len):
+        msg_mask += ' '
+    msg_mask += '\r'
+
+
+    # start extracting
     cnt = 0
     text_addr = text_addr.loc[~text_addr.index.isin(processed_loan_no)]
+    processed_num_addr = text_addr.shape[0]
     t1 = time.time()
     output_buffer = ''
     curr_buffer_size = 0
@@ -155,9 +169,23 @@ def encode_addr(amt_limit=10000,
         rem_cnt = amt_limit - cnt
         curr_spent = time.time() - t1
         cs_m, cs_s = divmod(curr_spent, 60)
-        msg = ' {}%, processed: {}, remaining: {} '
-        msg += ', {}min {}sec since started\r'
-        sys.stdout.write(msg.format(pct, cnt, rem_cnt, int(cs_m), round(cs_s)))
+        cs_h, cs_m = divmod(cs_m, 60)
+        cs_h = int(cs_h)
+        cs_m = int(cs_m)
+        cs_s = round(cs_s, 1)
+        process_speed = curr_spent / cnt
+        expected_rem = process_speed * (amt_limit - cnt)
+        rem_m, rem_s = divmod(expected_rem, 60)
+        rem_h, rem_m = divmod(rem_m, 60)
+        rem_h = int(rem_h)
+        rem_m = int(rem_m)
+        rem_s = round(rem_s, 1)
+
+        sys.stdout.write(msg_mask)
+        sys.stdout.flush()
+        sys.stdout.write(msg.format(pct, cnt, rem_cnt,
+                                    int(cs_h), int(cs_m), round(cs_s),
+                                    int(rem_h), int(rem_m), round(rem_s)))
         sys.stdout.flush()
 
         # teminate program if the target is met
@@ -173,11 +201,18 @@ def encode_addr(amt_limit=10000,
     t2 = time.time()
     time_finished = pd.datetime.now()
     m, s = divmod(t2 - t1, 60)
+    h, m = divmod(m, 60)
+    h = int(h)
+    m = int(m)
+    s = round(s, 1)
 
     # write log
+    rem_rows = total_num_addr - processed_num_addr - cnt
     time_started = 'Started at: {}'.format(time_started)
-    time_spent = 'Time spent: {:8.4}min {:6.4}sec'.format(m, s)
-    processed_cnt = 'Processed {} row(s)'.format(cnt)
+    time_spent = 'Time spent: {}: {}: {}'.format(h, m, s)
+    processed_cnt = '{}, {}, {} extracted/remaining/total'.format(cnt,
+                                                                rem_rows,
+                                                                total_num_addr)
     time_finished = 'Stopped at: {}'.format(time_finished)
     log_info = [time_started, time_spent, processed_cnt, time_finished]
 
@@ -189,7 +224,8 @@ def encode_addr(amt_limit=10000,
         f.write(time_finished + '\n')
         f.write('\n\n\n')
 
-    print()
+    sys.stdout.write(msg_mask)
+    sys.stdout.flush()
     print(time_started)
     print(scheduled_time)
     print(time_spent)
