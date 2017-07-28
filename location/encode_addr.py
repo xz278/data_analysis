@@ -153,8 +153,11 @@ def encode_addr(amt_limit=10000,
         cnt += 1
         pct = round(cnt / amt_limit * 100)
         rem_cnt = amt_limit - cnt
-        msg = ' {}%, processed: {}, remaining: {} \r'
-        sys.stdout.write(msg.format(pct, cnt, rem_cnt))
+        curr_spent = time.time() - t1
+        cs_m, cs_s = divmod(curr_spent, 60)
+        msg = ' {}%, processed: {}, remaining: {} '
+        msg += ', {}min {}sec since started\r'
+        sys.stdout.write(msg.format(pct, cnt, rem_cnt, int(cs_m), round(cs_s)))
         sys.stdout.flush()
 
         # teminate program if the target is met
@@ -186,6 +189,7 @@ def encode_addr(amt_limit=10000,
         f.write(time_finished + '\n')
         f.write('\n\n\n')
 
+    print()
     print(time_started)
     print(scheduled_time)
     print(time_spent)
