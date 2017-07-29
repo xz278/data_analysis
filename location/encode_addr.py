@@ -102,7 +102,7 @@ def encode_addr(amt_limit=10000,
     # start extracting
     cnt = 0
     text_addr = text_addr.loc[~text_addr.index.isin(processed_loan_no)]
-    processed_num_addr = text_addr.shape[0]
+    processed_num_addr = len(processed_loan_no)
     t1 = time.time()
     output_buffer = ''
     curr_buffer_size = 0
