@@ -114,11 +114,11 @@ def feature_distplot(df, f_col, f=None, t=None):
         Defaults to None.
         
     """
-    ax = sns.distplot(dist_df[k].dropna())
+    ax = sns.distplot(df[f_col].dropna())
     if t is not None:
-        ax.set_title(t)
+        ax.set_title(f_col)
 
-    print('Range: {}, {}'.format(min(dist_df[k]), max(dist_df[k])))
+    print('Range: {}, {}'.format(min(df[f_col]), max(df[f_col])))
 
     if f is not None:
         ax.figure.savefig(f)
