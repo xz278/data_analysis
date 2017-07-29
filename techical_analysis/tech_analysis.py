@@ -75,7 +75,10 @@ def auto_bin(v, n, kind='qcut', disp=False):
         List of Interval objects.
     """
     if kind == 'qcut':
-        bins = np.unique(pd.qcut(v.dropna(), n))
+        try:
+            bins = np.unique(pd.qcut(v.dropna(), n))
+        except:
+            bins = np.unique(pd.qcut(v.dropna(), n, duplicates='drop'))
     else:
         bins = np.unique(pd.cut(v.dropna(), n))
 
