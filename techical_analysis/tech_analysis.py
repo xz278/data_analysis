@@ -29,6 +29,8 @@ k = 'work-res'
 >>> # calculate and print iv value
 >>> iv, _ = utils.compute_woe(df=r, bin_col='bin', res_col='y')
 >>> print('IV: {:.6}'.format(iv))
+>>> # a different way of compute iv
+>>> iv = compute_iv_from_group(g)
 >>>
 >>> # plot response rate and data size in each bin
 >>> fig, _, _ = plot_feature(g)
@@ -321,3 +323,51 @@ def endpoints(intv_str):
     else:
         l, r = [float(x) for x in intv_str[1:-1].split(',')]
     return l, r
+
+
+def compute_iv_from_group(df, p_col='p', n_col='n', smooth=True):
+    """
+    #######################
+    ###  Domain Error   ###
+    #######################
+    Compute IV value from grouped data.
+
+    Parameters:
+    -----------
+    df: DataFrame
+        Grouped data.
+
+    p_col: str
+        Positive response count column.
+        Defaults to 'p'.
+
+    n_col: str
+        Negative response count column.
+        Defaults to 'n'.
+
+    smooth: bool
+        Whether to smooth data to avoid
+        extreme values.
+        Defaults to True.
+
+    Returns:
+    --------
+    iv: float
+        IV value.
+    """
+    if smooth:
+        smooth_v = 1
+    else:
+        smooth_v = 0
+    n_bins = df.shape[0]
+    all_pos = df[p_col].sum() + n_bins * smooth_v
+    all_neg = df[n_col].sum() + n_bins * smooth_v
+    iv = 0
+    for _, row in df.iterrows():
+        p = row[p_col] + smooth_v
+        n = row[n_col] + smooth_v
+        p_prob = p / all_pos
+        n_prob = n / all_neg
+        woe = math.log(p_prob / n_prob)
+        iv += (p_prob - n_prob) * woe
+    return iv
