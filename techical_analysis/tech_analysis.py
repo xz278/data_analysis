@@ -305,7 +305,7 @@ def gen_bin(breakpoints):
     """
     # return None if less than 3 breakpoints
     # is received
-    if len(breakpoints) <= 3:
+    if len(breakpoints) < 3:
         return None
 
     # generate breakpoints  
