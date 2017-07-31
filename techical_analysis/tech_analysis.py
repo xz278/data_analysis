@@ -126,7 +126,7 @@ def feature_distplot(df, f_col, f=None, t=None):
         ax.figure.savefig(f)
 
 
-def plot_feature(df, f=None):
+def plot_feature(df, f=None, y_bar_scale=3):
     """
     Plot response rate of a feature
     in seperate bins.
@@ -151,19 +151,27 @@ def plot_feature(df, f=None):
     fig, curveaxis = plt.subplots(figsize=(10,4))
     baraxis = curveaxis.twinx()
 
-    # curve plot
     x_ticks = list(range(df.shape[0]))
+    # plot overall postive rate
+    opr = df['overall_pr'][0]
+    curveaxis.plot([0] + x_ticks,
+                   [opr for _ in range(len(x_ticks) + 1)],
+                   '#6F6F6F')
+
+    # curve plot
     curveaxis.plot(x_ticks, df['pr'], 'r')
     # tsax.xaxis.tick_top()
 
-    # plot overall postive rate
-    opr = df['overall_pr'][0]
-    curveaxis.plot(x_ticks, [opr for _ in range(len(x_ticks))], 'k')
-
     # bar plot
-    baraxis.bar(x_ticks, df['sum'], width=0.3, facecolor='b')
-    bar_y_limit = df['sum'].max() * 3
-    baraxis.set_yticks([0, bar_y_limit])
+    baraxis.bar(x_ticks, df['sum'], width=0.3, facecolor='#94CDF3')
+    baraxis.bar(x_ticks, df['p'], width=0.3, facecolor='#F47E60')
+    bar_y_limit = df['sum'].max() * y_bar_scale
+
+    baraxis.set_ylim([0, bar_y_limit])
+    max_y, min_y = max(df['sum']), min(df['sum'])
+    y_ticks = np.arange(0, max_y * y_bar_scale, int(max_y * y_bar_scale / 7))
+    # baraxis.set_yticks(y_ticks)
+    # baraxis.set_yticks([0, bar_y_limit])
     # barax.xaxis.tick_top()
 
     # configure plot properties
