@@ -44,7 +44,7 @@ from collections import Counter
 import sys
 import seaborn as sns
 import matplotlib.pyplot as plt
-
+import scipy.stats.stats as stats
 
 
 def auto_bin(v, n, kind='qcut', disp=False):
@@ -371,3 +371,46 @@ def compute_iv_from_group(df, p_col='p', n_col='n', smooth=True):
         woe = math.log(p_prob / n_prob)
         iv += (p_prob - n_prob) * woe
     return iv
+
+
+def mono_bin(X, Y, n=20):
+    """
+    An attempt to implement monotonic bining,
+    from [https://statcompute.wordpress.com/
+    2012/12/08/monotonic-binning-with-python/]
+    ++++++++++++++++++++++++++++++++++++++++++
+    +++         Not recommended!!!         +++
+    ++++++++++++++++++++++++++++++++++++++++++
+
+    Parameters:
+    -----------
+    X: pandas.Series
+        Features.
+
+    Y: pandas.Series
+        Labels.
+
+    Returns:
+    --------
+    list
+        List of intervals
+
+    d3: pandas.DataFrame
+        Grouped data
+    """
+    X2 = X.fillna(np.median(X))
+    r = 0
+    while np.abs(r) < 1:
+        d1 = pd.DataFrame({'X': X2, 'Y': Y, 'Bucket': pd.qcut(X2, n, duplicates='drop')})
+        d2 = d1.groupby('Bucket', as_index=True)
+        r, p = stats.spearmanr(d2.mean().X, d2.mean().Y)
+        n = n - 1
+        d3 = pd.DataFrame(d2.min().X, columns = ['min_' + X.name])
+        d3 = pd.DataFrame()
+        d3['min_' + X.name] = d2.min().X
+        d3['max_' + X.name] = d2.max().X
+        d3[Y.name] = d2.sum().Y
+        d3['total'] = d2.count().Y
+        d3[Y.name + '_rate'] = d2.mean().Y
+        d3.sort_values('min_' + X.name)
+    return list(d3.index.values), d3
