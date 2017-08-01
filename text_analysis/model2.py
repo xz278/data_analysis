@@ -444,6 +444,7 @@ def run_model(params_f='./params.txt',
         xgb_train = xgb.DMatrix(dtrain[key_word], label=dtrain.label)
         xgb_val = xgb.DMatrix(test_data[key_word], label=test_data.label)
         xgb_test = xgb.DMatrix(test_data[key_word])
+        time_start = time.time()
         res = xgb.cv(params['params'],
                      xgb_train,
                      num_boost_round=params['num_rounds'],
@@ -453,7 +454,7 @@ def run_model(params_f='./params.txt',
                      early_stopping_rounds=params['early_stop'],
                      verbose_eval=1,
                      show_stdv=True)
-
+        time_end = time.time()
         # train model
         # num_rounds = params['num_rounds']
         # parameter_list = list(params['params'].items())
@@ -560,6 +561,10 @@ def run_model(params_f='./params.txt',
         ks_list = df_p.loc['ks'].values
         acc_list = df_p.loc['acc'].values
 
+        # time spent
+        ts = time_end - time_start
+        m, s = divmod(ts, 60)
+
         log_msg = ','.join(['{}'] * 16)
         log_msg += '\n'
         log_info_msg = log_msg.format(trainsize - valsize,
@@ -573,9 +578,8 @@ def run_model(params_f='./params.txt',
                                       acc_list[0],
                                       acc_list[1],
                                       acc_list[2],
-                                      # '{}:{}'.format(int(minutes),
-                                      #                int(seconds)),
-                                      'none',
+                                      '{}:{}'.format(int(m),
+                                                     int(s)),
                                       p2,
                                       '{}'.format(os.path.join(p2,
                                                   'params.txt')),
