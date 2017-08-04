@@ -583,6 +583,52 @@ def check_length(l):
     return r
 
 
+def cons_count(l, v=1):
+    """
+    Compute the number of most recent and highest
+    consecutive occurance of a given value.
+
+    Parameters:
+    -----------
+    l: list
+        List/Array-like data.
+
+    v: type of element in l
+        Value to consider.
+
+    Returns:
+    c: int
+        Current consecutive.
+
+    m: int
+        Maximum consecutive.
+    """
+    # current
+    p = len(l)
+    c = 0
+    while (p - 1 >= 0) and (l[p - 1] == v):
+        c += 1
+        p -= 1
+
+    # maximum
+    m = -1
+    curr_m = 0
+    p = len(l)
+    while p - 1 >= 0:
+        if l[p - 1] == v:
+            curr_m += 1
+        else:
+            if curr_m > m:
+                m = curr_m
+            curr_m = 0
+        if (p - 1 == 0) and (curr_m > m):
+            m = curr_m
+        p -= 1
+    return c, m
+
+
+
+
 def main():
     """
     Handle command line options.
