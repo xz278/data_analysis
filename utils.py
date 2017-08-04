@@ -564,6 +564,25 @@ def batch_latlon(ls_addr, stop_length=61, stop_thr=10000, ak=None):
     return ls_latlon
 
 
+def check_length(l):
+    """
+    Check the length of all elements in
+    a list.
+
+    Parameters:
+    -----------
+    l: list
+        List of elements to check
+
+    Returns:
+    --------
+    r: collections.Counter
+        Counter of the length.
+    """
+    r = Counter([len(str(x)) for x in l])
+    return r
+
+
 def main():
     """
     Handle command line options.
