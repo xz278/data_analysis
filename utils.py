@@ -627,6 +627,37 @@ def cons_count(l, v=1):
     return c, m
 
 
+def plot_roc(y_true, y_score, f=None):
+    """
+    Draw the roc curve.
+
+    y_true: list of bool
+        True label.
+
+    y_score: list of floats
+        Prediction scores for each label.
+
+    f: str
+        File to store the results.
+        Defaults to None, do not save.
+    """
+    fpr, tpr, _ = roc_curve(y_test, p_test)
+    roc_auc = auc(fpr, tpr)
+    plt.figure()
+    lw = 2
+    plt.plot(fpr, tpr, color='darkorange',
+             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    # plt.title('Receiver operating characteristic example')
+    plt.legend(loc="lower right")
+    plt.show()
+    if f is not None:
+        plt.savefig(f)
+
 
 
 def main():
