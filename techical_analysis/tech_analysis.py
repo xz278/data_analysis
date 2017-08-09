@@ -422,3 +422,39 @@ def mono_bin(X, Y, n=20):
         d3[Y.name + '_rate'] = d2.mean().Y
         d3.sort_values('min_' + X.name)
     return list(d3.index.values), d3
+
+
+def group_categorical_data(df, k, na_col='missing'):
+    """
+    Reformate categorical feature and label
+    into the required format for plot_feature.
+    """
+    df = df.replace([np.nan], na_col)
+    overall_response_rate = df.loc[df['label'] == 1].shape[0] / df.shape[0]
+    g_df = {}
+
+    for i, group in df.groupby(k):
+        e = {}
+        cnt = Counter(group['label'])
+        s = group.shape[0]
+        p = cnt[1]
+        n = cnt[0]
+        pr = p / s
+        nr = n / s
+        e['sum'] = s
+        e['p'] = p
+        e['n'] = n
+        e['pr'] = pr
+        e['nr'] = nr
+        e['overall_pr'] = overall_response_rate
+        g_df[i] = e
+        e = None
+    g_df = pd.DataFrame.from_dict(g_df, orient='index')
+    if na_col not in g_df.index:
+        g_df = g_df.sort_values('pr', ascending=True)
+    else:
+        g_df['_sort'] = g_df['pr']
+        g_df.loc[na_col, '_sort'] = -1
+        g_df = g_df.sort_values('_sort', ascending=True)
+        g_df = g_df.drop('_sort', axis=1)
+    return g_df
