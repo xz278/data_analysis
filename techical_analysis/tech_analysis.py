@@ -458,3 +458,14 @@ def group_categorical_data(df, k, na_col='missing'):
         g_df = g_df.sort_values('_sort', ascending=True)
         g_df = g_df.drop('_sort', axis=1)
     return g_df
+
+
+def update_df(df):
+    """
+    Update Dataframe information.
+    """
+    df = df.rename(columns={'sum': '总人数',
+                            'p': '坏客户', 'n': '好客户',
+                            'pr': '坏账率', 'nr': '好账率',
+                            'overall_pr': '总坏账率'})
+    return df
