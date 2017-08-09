@@ -659,6 +659,40 @@ def plot_roc(y_true, y_score, f=None):
         plt.savefig(f)
 
 
+def divide_list2(l, n):
+    """
+    Divide list l into n subsets in ascending order.
+    Nan value is excluded from all subsets.
+
+    l: list
+        List of data.
+
+    n: int
+        Number of subsets. Must be smaller than or
+        equal to the length of the list.
+
+    Returns:
+    --------
+    buckest: list of list
+        List of data.
+    """
+    if n > len(l):
+        print('[!] n must be smaller than or equal to the number of elements in the list.')
+        return
+    i, r = divmod(len(l), n)
+
+    bucket_size = [i for _ in range(n)]
+    p = 0
+    for j in range(r):
+        bucket_size[j] += 1
+        p += 1
+    buckets = []
+    p = 0
+    for s in bucket_size:
+        buckets.append(l[p: p+s])
+        p += s
+    return buckets
+
 
 def main():
     """
