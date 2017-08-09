@@ -15,6 +15,7 @@ import psutil
 import json
 from urllib.request import urlopen, quote
 import requests
+import dateutil
 
 def compute_woe(df, res_col, bin_col='bin', smooth=1, auto_gc=True):
     """
@@ -692,6 +693,13 @@ def divide_list2(l, n):
         buckets.append(l[p: p+s])
         p += s
     return buckets
+
+
+def rmonth(m):
+    """
+    Return a relative delta of month m.
+    """
+    return dateutil.relativedelta.relativedelta(months=m)
 
 
 def main():
