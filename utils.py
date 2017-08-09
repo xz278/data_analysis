@@ -702,6 +702,18 @@ def rmonth(m):
     return dateutil.relativedelta.relativedelta(months=m)
 
 
+def count_nan(l):
+    """
+    Return the number of nan values
+    in the list.
+    """
+    s = 0
+    for i in l:
+        if pd.isnull(i):
+            s += 1
+    return s
+
+
 def main():
     """
     Handle command line options.
