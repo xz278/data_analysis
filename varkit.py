@@ -866,7 +866,9 @@ def split_feature(df, class_cnt, size, var_col, label_col, min_split_size,  metr
                     continue
 
                 # compare and store best split
-                v = (gini_left + gini_right) / 2
+                l_p = df_left.shape[0] / df.shape[0]
+                r_p = df_right.shape[0] / df.shape[0]
+                v = (gini_left * l_p + gini_right * r_p) / 2
                 if v < best_v:
                     best_v = v
                     info_left = gini_left
