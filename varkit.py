@@ -87,6 +87,7 @@ class VarAnalysis():
         Generate breakpoints.
         """
         self.breakpoints = generate_breakpoints(self.data,
+                                                var_kind=self.var_kind,
                                                 var_col=self.var_col,
                                                 label_col=self.label_col,
                                                 verbose=verbose,
@@ -97,10 +98,14 @@ class VarAnalysis():
         Group data and plot analysis stats.
         """
         self.data['bin'] = gen_bin(self.data,
+                                   var_kind=self.var_kind,
                                    var_col=self.var_col,
                                    bins=self.breakpoints)
         # compute stats
-        iv, stats_df, pretty_df = woe(self.data, verbose=True, pretty=True, s=False)
+        iv, stats_df, pretty_df = woe(self.data,
+                                      var_kind=self.var_kind,
+                                      verbose=True, pretty=True,
+                                      s=False)
         self.iv = iv
         self.stats_df = stats_df
         self.pretty_df = pretty_df
@@ -244,9 +249,10 @@ def entropy(data):
     return e
 
 
-def generate_breakpoints(df, var_col, label_col, method='even_width',
-            left=None, right=None, edge=None,
-            verbose=False, **kwargs):
+def generate_breakpoints(df, var_col, label_col, var_kind,
+                         method='even_width', group=None,
+                         left=None, right=None, edge=None,
+                         verbose=False, **kwargs):
     """
     Generate bins.
 
@@ -256,26 +262,52 @@ def generate_breakpoints(df, var_col, label_col, method='even_width',
         Whether to plot breakpoints.
         Defaults to False.
     """
-    # even width bining
-    if method in ['even_width', 'w']:
-        intv = pd.cut(df[var_col], **kwargs)
-        bp = to_breakpoints(intv, left, right, edge, df[var_col])
+    # for numerical data
+    if var_kind in ['numerical', 'n']:
+        # even width bining
+        if method in ['even_width', 'w']:
+            intv = pd.cut(df[var_col], **kwargs)
+            bp = to_breakpoints(intv, left, right, edge, df[var_col])
 
-    # even depth binning
-    if method in ['even_depth', 'd']:
-        intv = pd.qcut(df[var_col], duplicates='drop', **kwargs)
-        bp = to_breakpoints(intv, left, right, edge, df[var_col])
+        # even depth binning
+        if method in ['even_depth', 'd']:
+            intv = pd.qcut(df[var_col], duplicates='drop', **kwargs)
+            bp = to_breakpoints(intv, left, right, edge, df[var_col])
 
-    # genearte bin automatically
-    if method in ['woe', 'iv', 'gini', 'entropy']:
-        tree = None
-        tree = Tree(df, var_col=var_col, label_col=label_col)
-        tree = tree.build(metric=method, **kwargs)
-        bp = tree.get_breakpoints(left=left, right=right, edge=edge)
-        tree = None
+        # genearte bin automatically
+        if method in ['woe', 'iv', 'gini', 'entropy']:
+            tree = None
+            tree = Tree(df, var_col=var_col, label_col=label_col)
+            tree = tree.build(metric=method, **kwargs)
+            bp = tree.get_breakpoints(left=left, right=right, edge=edge)
+            tree = None
 
-    if verbose:
-        print(bp)
+        if verbose:
+            print(bp)
+
+    # for categorical variable
+    if var_kind in ['categorical', 'c']:
+        if group is None:
+            bp = {}
+            for x in df[var_col].unique():
+                bp[x] = x
+            group = bp
+        else:
+            reverse_dict = {}
+            for k in group:
+                for v in group[k]:
+                    reverse_dict[v] = k
+            # check if new grouping is valid
+            if set(reverse_dict.keys()) != set(df[var_col]):
+                error_msg = '[!] Error: New grouping is not inclusive of all old categories.'
+                error_msg += '\n    New grouping must include all old categories.'
+                print(error_msg)
+                bp = None
+            else:
+                bp = reverse_dict
+
+        if verbose:
+            print(group)
 
     return bp
 
@@ -317,7 +349,7 @@ def divide_list(l, n):
     return buckets
 
 
-def gen_bin(df, var_col, bins=10, method='even_width',
+def gen_bin(df, var_col, bins=None, method='even_width',
             left=None, right=None, edge=None, group=None,
             var_kind='n', verbose=False, **kwargs):
     """
@@ -346,7 +378,7 @@ def gen_bin(df, var_col, bins=10, method='even_width',
         If list, it a list of breakpoint as
         input for pd.cut(), and other bining
         related parameters are discarded.
-        Defaults to 10.
+        Defaults to None.
 
     method: str
         Type of bining methods.
@@ -397,6 +429,8 @@ def gen_bin(df, var_col, bins=10, method='even_width',
     """
     # for numerical variable
     if var_kind in ['numerical', 'n']:
+        if bins is None:
+            bins = 10
         # if breakpoints are specified
         if type(bins) is list:
             bins_ret = pd.cut(df[var_col], bins=bins)
@@ -420,21 +454,24 @@ def gen_bin(df, var_col, bins=10, method='even_width',
 
     # for categorical variable
     if var_kind in ['categorical', 'c']:
-        if group is None:
-            bins_ret = df[var_col]
-        else:
-            reverse_dict = {}
-            for k in group:
-                for v in group[k]:
-                    reverse_dict[v] = k
-            # check if new grouping is valid
-            if set(reverse_dict.keys()) != set(df[var_col]):
-                error_msg = '[!] Error: New grouping is not inclusive of all old categories.'
-                error_msg += '\n    New grouping must include all old categories.'
-                print(error_msg)
-                bins_ret = []
+        if bins is None:
+            if group is None:
+                bins_ret = df[var_col]
             else:
-                bins_ret = [reverse_dict[x] for x in df[var_col]]
+                reverse_dict = {}
+                for k in group:
+                    for v in group[k]:
+                        reverse_dict[v] = k
+                # check if new grouping is valid
+                if set(reverse_dict.keys()) != set(df[var_col]):
+                    error_msg = '[!] Error: New grouping is not inclusive of all old categories.'
+                    error_msg += '\n    New grouping must include all old categories.'
+                    print(error_msg)
+                    bins_ret = []
+                else:
+                    bins_ret = [reverse_dict[x] for x in df[var_col]]
+        else:
+            bins_ret = [bins[x] for x in df[var_col]]
     return bins_ret
 
 
