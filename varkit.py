@@ -217,6 +217,33 @@ def to_breakpoints(intv, left=None, right=None, edge=None, data=None):
     return bp
 
 
+def entropy(data):
+    """
+    Compute entropy of a set of data.
+
+    Parameters:
+    -----------
+    data: list or numpy.array
+        Data of categories.
+
+    Returns:
+    e: float
+        Entropy.
+    """
+    # filter out nan value
+    data = list(filter(lambda x: not pd.isnull(x), data))
+    # get unique values, Counter, data size
+    u = np.unique(data)
+    cnt = Counter(data)
+    s = len(data)
+    # compute gini impurity
+    e = 0
+    for i in u:
+        p_i = cnt[i] / s
+        e -= p_i * math.log(p_i)
+    return e
+
+
 def generate_breakpoints(df, var_col, label_col, method='even_width',
             left=None, right=None, edge=None,
             verbose=False, **kwargs):
@@ -240,7 +267,7 @@ def generate_breakpoints(df, var_col, label_col, method='even_width',
         bp = to_breakpoints(intv, left, right, edge, df[var_col])
 
     # genearte bin automatically
-    if method in ['woe', 'iv', 'gini']:
+    if method in ['woe', 'iv', 'gini', 'entropy']:
         tree = None
         tree = Tree(df, var_col=var_col, label_col=label_col)
         tree = tree.build(metric=method, **kwargs)
@@ -844,6 +871,38 @@ def split_feature(df, class_cnt, size, var_col, label_col, min_split_size,  metr
                     best_v = v
                     info_left = gini_left
                     info_right = gini_right
+                    bp = i
+
+        # entropy information gain
+        if metric == 'entropy':
+            best_v = -math.inf
+            for i in sorted_list[:-1]:
+                # check min_split_size parameter
+                df_left = df.loc[df[var_col] <= i]
+                df_right = df.loc[df[var_col] > i]
+                if (df_left.shape[0] < min_split_size) or (df_right.shape[0] < min_split_size):
+                    continue
+
+                entropy_before = entropy(df[label_col].values)
+                entropy_left = entropy(df_left[label_col].values)
+                entropy_right = entropy(df_right[label_col].values)
+
+                # skip when gini = 0
+                if (entropy_left == 0) or (entropy_right == 0):
+                    continue
+
+                left_prop = df_left.shape[0] / df.shape[0]
+                entropy_l = entropy_left * left_prop
+                right_prop = df_right.shape[0] / df.shape[0]
+                entropy_r = entropy_right * right_prop
+                entropy_after = entropy_l + entropy_r
+                v = entropy_before - entropy_after
+
+                # compare and store best split
+                if v > best_v:
+                    best_v = v
+                    info_left = entropy_left
+                    info_right = entropy_right
                     bp = i
 
     return bp, info_left, info_right
