@@ -239,8 +239,8 @@ def generate_breakpoints(df, var_col, label_col, method='even_width',
         intv = pd.qcut(df[var_col], duplicates='drop', **kwargs)
         bp = to_breakpoints(intv, left, right, edge, df[var_col])
 
-    # use woe to genearte bin automatically
-    if method == 'woe':
+    # genearte bin automatically
+    if method in ['woe', 'iv', 'gini']:
         tree = None
         tree = Tree(df, var_col=var_col, label_col=label_col)
         tree = tree.build(metric=method, **kwargs)
@@ -783,18 +783,19 @@ def split_feature(df, class_cnt, size, var_col, label_col, min_split_size,  metr
     # in this node
     if (size >=4) and (class_cnt > 0).all():
     # search for the best breakpoint
-        max_v = -1
         sorted_list = sorted(df[var_col].unique())
 
-        for i in sorted_list[:-1]:
-            # compute woe for each subset
-            df_left = df.loc[df[var_col] <= i]
-            df_right = df.loc[df[var_col] > i]
-            # check min_split_size parameter
-            if (df_left.shape[0] < min_split_size) or (df_right.shape[0] < min_split_size):
-                continue
-            
-            if metric in ['woe', 'iv']:
+        # use WOE or IV to split feature
+        if metric in ['woe', 'iv']:
+            best_v = -1
+            for i in sorted_list[:-1]:
+                # check min_split_size parameter
+                df_left = df.loc[df[var_col] <= i]
+                df_right = df.loc[df[var_col] > i]
+                if (df_left.shape[0] < min_split_size) or (df_right.shape[0] < min_split_size):
+                    continue
+
+                # compute woe for each subset
                 woe_l, iv_l = group_woe(df=df_left, s=False, **kwargs)
                 woe_r, iv_r = group_woe(df=df_right, s=False, **kwargs)
 
@@ -806,23 +807,73 @@ def split_feature(df, class_cnt, size, var_col, label_col, min_split_size,  metr
                 # compare and store best split
                 if metric == 'woe':
                     v = abs(woe_l - woe_r)
-
-                    if v > max_v:
-                        max_v = v
+                    if v > best_v:
+                        best_v = v
                         bp = i
                         info_left = woe_l
                         info_right = woe_r
 
                 elif metric == 'iv':
                     v = iv_l + iv_r
-                    
-                    if v > max_v:
-                        max_v = v
+                    if v > best_v:
+                        best_v = v
                         bp = i
                         info_left = iv_l
                         info_right = iv_r
-    
+
+        # gini impurity
+        if metric == 'gini':
+            best_v = math.inf
+            for i in sorted_list[:-1]:
+                # check min_split_size parameter
+                df_left = df.loc[df[var_col] <= i]
+                df_right = df.loc[df[var_col] > i]
+                if (df_left.shape[0] < min_split_size) or (df_right.shape[0] < min_split_size):
+                    continue
+                
+                gini_left = gini_impurity(df_left[label_col].values)
+                gini_right = gini_impurity(df_right[label_col].values)
+
+                # skip when gini = 0
+                if (gini_left == 0) or (gini_right == 0):
+                    continue
+
+                # compare and store best split
+                v = (gini_left + gini_right) / 2
+                if v < best_v:
+                    best_v = v
+                    info_left = gini_left
+                    info_right = gini_right
+                    bp = i
+
     return bp, info_left, info_right
+
+
+def gini_impurity(data):
+    """
+    Compute gini impurity of a set of data.
+
+    Parameters:
+    -----------
+    data: list or numpy.array
+        Data of categories.
+
+    Returns:
+    g: float
+        Gini impurity.
+    """
+    # filter out nan value
+    data = list(filter(lambda x: not pd.isnull(x), data))
+    # get unique values, Counter, data size
+    u = np.unique(data)
+    cnt = Counter(data)
+    s = len(data)
+    # compute gini impurity
+    g = 0
+    for i in u:
+        p_i = cnt[i] / s
+        g += p_i * (1 - p_i)
+    return g
 
 
 class TreeNode():
