@@ -660,13 +660,13 @@ def plot_roc(y_true, y_score, f=None):
         plt.savefig(f)
 
 
-def divide_list2(l, n):
+def divide_list(l, n):
     """
-    ++++++++++++++++++++++++++++++++++++++++++++
-    Missing value not handled
-    ++++++++++++++++++++++++++++++++++++++++++++
     Divide list l into n subsets in ascending order.
+    Nan value is excluded from all subsets.
 
+    Parameters:
+    -----------
     l: list
         List of data.
 
@@ -676,30 +676,25 @@ def divide_list2(l, n):
 
     Returns:
     --------
-    buckest: list of list
-        List of data.
+    buckest: list (n_buckets, buckets_size)
+        List of elements for each group.
     """
     if n > len(l):
         print('[!] n must be smaller than or equal to the number of elements in the list.')
         return
     i, r = divmod(len(l), n)
-#     l = list(filter(lambda x: not pd.isnull(x), l))
-    l = sorted(l)
+
     bucket_size = [i for _ in range(n)]
-    idx = [-1 for i in range(len(l))]
     p = 0
     for j in range(r):
         bucket_size[j] += 1
         p += 1
     buckets = []
     p = 0
-    curr_idx = 0
     for s in bucket_size:
         buckets.append(l[p: p+s])
-        idx[p: p+s] = [curr_idx for _ in range(s)]
-        curr_idx += 1
         p += s
-    return buckets, idx
+    return buckets
 
 
 def rmonth(m):
