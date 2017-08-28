@@ -716,6 +716,33 @@ def count_nan(l):
     return s
 
 
+def outlier_threshold(x):
+    """
+    Compute threshold for detecting outliers
+    in series of numeric values.
+    Outliers are points outside of
+    [(Q1 - 1.5 * IQR), (Q3 + 1.5 * IQR)],
+    where Q1 and Q3 are 25% and 75% quantiles
+    and IQR is (Q3 - Q1).
+
+    Parameteres:
+    ------------
+    x: Pandas.Series
+        Data.
+
+    lower, upper: float
+        Lower and upper threholds for out liers.
+    """
+    # filter out nan values
+    x = list(filter(lambda z: not pd.isnull(z), x))
+    q1 = np.percentile(x, 25)
+    q3 = np.percentile(x, 75)
+    iqr = q3 - q1
+    lower = q1 - 1.5 * iqr
+    upper = q3 + 1.5 * iqr
+    return lower, upper
+
+
 def main():
     """
     Handle command line options.
