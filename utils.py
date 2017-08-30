@@ -844,22 +844,16 @@ def cross_validation(X, y, clf, n_fold=10, n_round=10, verbose=False, resampler=
         print('std:   {:^12.4f}   {:^12.4f}   {:^12.4f}   {:^12.4f}'.format(*std_floats))
         fig, axarr = plt.subplots(2, 2, figsize=(10,4))
         axarr[0][0] = pd.DataFrame({'train': auc_train, 'test': auc_test}).plot(ax=axarr[0][0])
-#         axarr[0][0].set_ylabel('AUC')
         axarr[0][0].set_title('AUC-train')
         axarr[0][1] = sns.boxplot(auc_test, ax=axarr[0][1], orient='v', width=0.5)
-#         axarr[0][1].set_ylabel('AUC')
         axarr[0][1].set_title('AUC-test')
         axarr[1][0] = pd.DataFrame({'train': ks_train, 'test': ks_test}).plot(ax=axarr[1][0])
-#         axarr[1][0].set_ylabel('KS')
         axarr[1][0].set_title('KS-train')
         axarr[1][1] = sns.boxplot(ks_test, ax=axarr[1][1], orient='v', width=0.5)
-#         axarr[1][1].set_ylabel('KS')
         axarr[1][1].set_title('KS-test')
         fig.tight_layout()
 
     return stats, results, fig, axarr
-
-
 
 
 def main():
