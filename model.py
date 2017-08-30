@@ -437,3 +437,109 @@ def confusion_matrix(label, pred, verbose=False):
         s += 'Prevalence: Actual yes / total\n'
         print(s)
     return cm, stats
+
+
+def rank_features(X, y, feature_pool, feature_type, clf=None, verbose=False):
+    """
+    Use backwards feature selection to select
+    the best features.
+    Remove the feature that brings the least effects
+    to the overall performance of the model measured by auc.
+
+    Examples:
+
+    res = rank_features(pdl,
+                        pdl.label,
+                        feature_to_keep,
+                        feature_type,
+                        XgboostWrapper(list_params=params['params'],
+                                       num_rounds=params['num_rounds']),
+                        verbose=True)
+
+
+
+    Parameters:
+    ----------
+    X: DataFrame
+        Data.
+
+    y: array-like
+        Labels.
+
+    feature_pool: list of str
+        Features to choose from.
+
+    feature_type: dict
+        Type of features.
+        {'numerical': [numerical var names],
+         'categorical': [categorical var names]}
+
+    clf: classifier object
+        Classifier.
+        Defautls to None, in which case
+        logistic regression is used.
+        fit() and predict_proba() will be called
+        on the classifier object.
+
+    verbose: bool
+        Whether to plot the information.
+        Defaults to False.
+
+    Returns:
+    --------
+    res: DataFrame
+        Results.
+    """
+    # benchmark auc score
+    if clf is None:
+        clf = LogisticRegression()
+    pool = set(feature_pool)
+    c_var = set(feature_type['categorical'])
+    n_var = set(feature_type['numerical'])
+    dtrain, _ = prepare_vars(X,
+                             numerical_vars=list(n_var & pool),
+                             categorical_vars=list(c_var & pool),
+                             reset_index=True, scale=True)
+    auc_train, auc_test , _, _ = cross_validation(dtrain, y, clf=clf, verbose=False)
+    tot_auc_train = [np.mean(auc_train)]
+    tot_auc_test = [np.mean(auc_test)]
+    var_num = [len(feature_pool)]
+    rank = []
+
+    while len(pool) > 1:
+        best_test = 0
+        best_train = 0
+        v = None
+        for f in pool:
+            curr_f = pool.copy()
+            curr_f.remove(f)
+            dtrain, _ = prepare_vars(X,
+                                     numerical_vars=list(n_var & curr_f),
+                                     categorical_vars=list(c_var & curr_f),
+                                     reset_index=True, scale=True)
+            auc_train, auc_test , _, _ = cross_validation(dtrain, y,
+                                                          clf=clf,
+                                                          verbose=False)
+            auc_train = np.mean(auc_train)
+            auc_test = np.mean(auc_test)
+            if auc_test > best_test:
+                best_test = auc_test
+                best_train = auc_train
+                v = f
+        pool.remove(v)
+        tot_auc_train.append(best_train)
+        tot_auc_test.append(best_test)
+        var_num.append(len(pool))
+        rank.append(v)
+    rank.append(list(pool)[0])
+    res = pd.DataFrame({'auc-train': tot_auc_train,
+                        'auc-test': tot_auc_test,
+                        'num_var': var_num,
+                        'rank': rank})
+    if verbose:
+        ax = res[['auc-train', 'auc-test', 'num_var']].plot(x='num_var', figsize=(14, 5), grid=True)
+        ax.set_xlabel('Number of remaining features')
+        ax.set_ylabel('AUC')
+        _ = ax.set_xticks(np.arange(0, res.shape[0], 1))
+        _ = ax.set_xticks(np.arange(res.shape[0], 0, -1))
+    return res
