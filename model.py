@@ -236,3 +236,100 @@ def cross_validation(X, y, clf, n_fold=10, n_round=10, verbose=False, resampler=
     return stats, results, fig, axarr
 
 
+class XgboostWrapper():
+    """
+    A wrapper class of Xgboost to resemble
+    api provided by scikit-learn machien learning
+    algorithm.
+
+    Example:
+
+    with open('./xgboost_params.txt', 'r') as f:
+        params = yaml.load(f)
+    clf = XgboostWrapper(list_params=params['params'], num_rounds=params['num_rounds'])
+    clf = clf.fit(X=X_train, y=y_train)
+    p_test = clf.predict_proba(X=X_test)[:, 1]
+    auc_score = roc_auc_score(y_true=y_test, y_score=p_test)
+
+    Attributes:
+    ----------
+    dtrain: xgboost.DMatrix
+        Training data.
+
+    feature_names_: list of str
+        Features names.
+
+    list_params: list
+        List parameterse for xgboost.train()
+
+    num_rounds: int
+        Xgboost.train() number of iterations.
+
+    kwargs: dict
+        Parametes for xgboost.train()
+    """
+
+    def __init__(self, list_params, num_rounds, **kwargs):
+        """
+        Constructor.
+
+        Parameters:
+        -----------
+        kwargs: keyword arguments
+            keyword parameters for xgboost.train()
+        """
+        self.list_params = list_params
+        self.num_rounds = num_rounds
+        self.kwargs = kwargs
+
+    def fit(self, X, y):
+        """
+        Fits the data to the classifier.
+        Similar to the fit funcion in scikit learn.
+
+        Parameters:
+        -----------
+        X: DataFrame, numpy.ndarray or list
+            Training data.
+
+        y: array-like
+            Labels.
+        """
+        self.dtrain = xgb.DMatrix(X, y)
+        self.model = xgb.train(list(self.list_params.items()),
+                               self.dtrain,
+                               self.num_rounds,
+                               **self.kwargs)
+        self.feature_names_ = self.model.feature_names
+
+        feature_importances_gain = self.model.get_score(importance_type='gain')
+        gain = [feature_importances_gain[x] if x in feature_importances_gain else 0
+                for x in self.feature_names_]
+        self.feature_importances_ = np.array(gain)
+        self.feature_gain_ = np.array(gain)
+
+        feature_importances_cover = self.model.get_score(importance_type='cover')
+        cover = [feature_importances_cover[x] if x in feature_importances_cover else 0
+                for x in self.feature_names_]
+        self.feature_cover_ = np.array(cover)
+
+        feature_importances_weight = self.model.get_score(importance_type='weight')
+        weight = [feature_importances_weight[x] if x in feature_importances_weight else 0
+                for x in self.feature_names_]
+        self.feature_weight_ = np.array(weight)
+        return self
+
+    def predict_proba(self, X):
+        """
+        Predict the probability of class 0 and 1.
+
+        Parameters:
+        -----------
+        X: DataFrame, numpy.ndarray or list
+            Testing data.
+        """
+        p_test = self.model.predict(xgb.DMatrix(X))
+        predict_0 = (1 - p_test).reshape([-1, 1])
+        predict_1 = p_test.reshape([-1, 1])
+        pred = np.hstack([predict_0, predict_1])
+        return pred
