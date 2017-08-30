@@ -333,3 +333,107 @@ class XgboostWrapper():
         predict_1 = p_test.reshape([-1, 1])
         pred = np.hstack([predict_0, predict_1])
         return pred
+
+
+def confusion_matrix(label, pred, verbose=False):
+    """
+    Create a confusion matrix.
+    Assume 1 for positive and 0 for negative.
+    Addition information includes:
+    'accuarcy': (tp + tn) / total
+    'missclassification rate': (fp + fn) / total
+    'true positive rate': tp / actual yes
+        also known as 'sensitivity' or 'recall'
+    'false positive rate': fp / actual no
+    'specificity': tn / actual no
+    'precision': tp / predicted yes
+    'prevalence': actual yes / total
+
+    label = [0,0,0,0,1,1,1,1,1,1,1,1]
+    pred = [1,1,0,0,0,0,1,1,1,1,0,0]
+
+    cm ,stats = confusion_matrix(label=label, pred=pred, verbose=True)
+
+    Parameters:
+    -----------
+    label: list
+        True labels.
+
+    pred: list
+        Predicted class, NOT PROBABILITIES.
+
+    verbose: bool
+        Whether print verbose results.
+        Defautls to False.
+
+    Returns:
+    --------
+    cm: pandas.DataFrame
+        Confusion matrix.
+
+    stats: dict
+        Other statistics.
+    """
+    df = pd.DataFrame({'label': label, 'pred': pred})
+    tp = df.loc[(df['label'] == 1) & (df['pred'] == 1)].shape[0]
+    fp = df.loc[(df['label'] == 0) & (df['pred'] == 1)].shape[0]
+    tn = df.loc[(df['label'] == 0) & (df['pred'] == 0)].shape[0]
+    fn = df.loc[(df['label'] == 1) & (df['pred'] == 0)].shape[0]
+    cm = pd.DataFrame([[tn, fp], [fn, tp]],
+                      columns=['Predicted: NO', 'Predicted: YES'],
+                      index=['Actual: NO', 'Actual: YES'])
+
+    accuarcy = (tp + tn) / df.shape[0]
+    misclassification = (fp + fn) / df.shape[0]
+    tp_rate = tp / df.loc[df['label'] == 1].shape[0]
+    fp_rate = fp / df.loc[df['label'] == 0].shape[0]
+    specificity = tn / df.loc[df['label'] == 0].shape[0]
+    precision = tp / df.loc[df['pred'] == 1].shape[0]
+    prevalence = df.loc[df['label'] == 1].shape[0] / df.shape[0]
+    stats = {'accuarcy': accuarcy,
+             'misclassification rate': misclassification,
+             'true positive rate': tp_rate,
+             'sensitivity': tp_rate,
+             'recall': tp_rate,
+             'false positive rate': fp_rate,
+             'specificity': specificity,
+             'precision': precision,
+             'prevalence': prevalence}
+
+    if verbose:
+        s = '               Confusion Matrix\n'
+        s += '-------------------------------------------\n'
+        s += str(cm) + '\n\n'
+        s += '                  Statistics\n'
+        s += '-------------------------------------------\n'
+        cnt = Counter(df['label'])
+        s_len = len(str(df.shape[0])) + 4
+        s += '           {:>{}}{:>{}}{:>{}}\n'.format('Total', s_len,
+                                                      'Yes', s_len,
+                                                      'No', s_len)
+        s += 'Acutal:    {:>{}}{:>{}}{:>{}}\n'.format(df.shape[0], s_len,
+                                                      cnt[1], s_len,
+                                                      cnt[0], s_len)
+        cnt = Counter(df['pred'])
+        s += 'Predicted: {:>{}}{:>{}}{:>{}}\n\n'.format(df.shape[0], s_len,
+                                                        cnt[1], s_len,
+                                                        cnt[0], s_len)
+        s += 'TP: %d\n' % tp
+        s += 'FP: %d\n' % fp
+        s += 'TN: %d\n' % tn
+        s += 'FN: %d\n' % fn
+        s += 'Accuarcy:                   %.4f\n' % accuarcy
+        s += 'Misclassification Rate:     %.4f\n' % misclassification
+        s += 'Sensitivity/Recall/TP Rate: %.4f\n' % tp_rate
+        s += 'Specificity:                %.4f\n' % specificity
+        s += 'FP Rate:                    %.4f\n' % fp_rate
+        s += 'Precision:                  %.4f\n' % precision
+        s += 'Prevalence:                 %.4f\n' % prevalence
+        s += '\n*****\n'
+        s += 'Accuarcy: (TP + TN) / total\n'
+        s += 'Sensitivity: FP / Actual yes\n'
+        s += 'Specificity: TN / Actual no\n'
+        s += 'Precision: TP / Predicted yes\n'
+        s += 'Prevalence: Actual yes / total\n'
+        print(s)
+    return cm, stats
