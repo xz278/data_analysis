@@ -743,7 +743,7 @@ def outlier_threshold(x):
     return lower, upper
 
 
-def cross_validation(X, y, clf, n_fold=10, n_round=10, verbose=False):
+def cross_validation(X, y, clf, n_fold=10, n_round=10, verbose=False, resampler=None):
     """
     Perform cross validation on the dataset with specified
     classifier.
@@ -796,6 +796,9 @@ def cross_validation(X, y, clf, n_fold=10, n_round=10, verbose=False):
         for train_index, test_index in skf.split(d_x, d_y):
             X_train, X_test = d_x.iloc[train_index], d_x.iloc[test_index]
             y_train, y_test = d_y[train_index], d_y[test_index]
+
+            if resampler is not None:
+                X_train, y_train = resampler.fit_sample(X=X_train.as_matrix(), y=y_train)
 
             clf = clf.fit(X_train, y_train)
 
