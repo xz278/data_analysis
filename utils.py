@@ -769,6 +769,10 @@ def cross_validation(X, y, clf, n_fold=10, n_round=10, verbose=False, resampler=
     verbose: bool
         Whether to plot addtional information.
 
+    resampler: Resampler object
+        A resampler object to perform resampling on
+        training data in each split.
+
     Returns:
     --------
     stats: DataFrame
